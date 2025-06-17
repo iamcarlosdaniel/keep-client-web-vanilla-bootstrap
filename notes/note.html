@@ -111,7 +111,9 @@
             <div class="px-1 mt-auto">
               <div class="d-flex flex-column">
                 <p class="mb-1">Share with:</p>
-                <div class="mb-1" id="sharedUsers">Loading shared users...</div>
+                <div class="mb-1 inline" id="sharedUsers">
+                  Loading shared users...
+                </div>
                 <hr />
                 <div class="mb-1 mt-1">
                   <button
@@ -243,7 +245,7 @@
             document.getElementById("sharedUsers").innerHTML = note.shared_with
               .map(
                 (user) => `
-                <button type="button" class="btn btn-outline-dark btn-sm rounded-0" onclick="unshareNote('${user.user_id.email}')">
+                <button type="button" class="btn btn-outline-dark btn-sm rounded-0 mb-1" onclick="unshareNote('${user.user_id.email}')">
                   ${user.user_id.email} <i class="bi bi-x"></i>
                 </button>
               `
