@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Confirm account</title>
+    <!--Bootstrap styles-->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT"
+      crossorigin="anonymous"
+    />
+    <!--Bootstrap icons styles-->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
+    />
+    <style>
+      .form-signin {
+        max-width: 450px;
+        padding: 1rem;
+      }
+
+      .form-signin .form-floating:focus-within {
+        z-index: 2;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="vh-100 d-flex align-items-center py-4">
+      <div class="form-signin w-100 m-auto">
+        <form id="verificationForm">
+          <h1 class="h3 fw-normal">Confirm account</h1>
+          <p>Please enter the verification code we sent to your email</p>
+
+          <div class="form-floating">
+            <input
+              type="text"
+              class="form-control rounded-0"
+              id="otpVerificationForm"
+              placeholder="Password"
+              required
+            />
+            <label for="otpVerificationForm">Verification code</label>
+          </div>
+
+          <button
+            class="btn btn-outline-primary rounded-0 w-100 py-2 mt-4 mb-3"
+            type="submit"
+          >
+            Send code <i class="bi bi-arrow-right"></i>
+          </button>
+        </form>
+        <div class="text-start mt-3 mb-3 text-center">
+          <p class="mb-0">Haven&apos;t received the code yet?</p>
+          <button class="btn btn-link">Resend code</button>
+        </div>
+
+        <div class="text-start mt-3 mb-3 text-center">
+          <p>&copy; 2024</p>
+        </div>
+      </div>
+    </main>
+
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+      <!--Success toast-->
+      <div
+        class="toast align-items-center text-bg-primary border-0"
+        role="alert"
+        aria-live="assertive"
+        aria-atomic="true"
+      >
+        <div class="d-flex">
+          <div class="toast-body">Hello, world! This is a toast message.</div>
+          <button
+            type="button"
+            class="btn-close btn-close-white me-2 m-auto"
+            data-bs-dismiss="toast"
+            aria-label="Close"
+          ></button>
+        </div>
+      </div>
+
+      <!--Error toast-->
+      <div
+        class="toast align-items-center text-bg-danger border-0"
+        role="alert"
+        aria-live="assertive"
+        aria-atomic="true"
+      >
+        <div class="d-flex">
+          <div class="toast-body">Hello, world! This is a toast message.</div>
+          <button
+            type="button"
+            class="btn-close btn-close-white me-2 m-auto"
+            data-bs-dismiss="toast"
+            aria-label="Close"
+          ></button>
+        </div>
+      </div>
+    </div>
+
+    <!--Bootstrap scripts-->
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO"
+      crossorigin="anonymous"
+    ></script>
+    <!--Axios scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!--Axios instance-->
+    <script src="../utils/axiosInstance.js"></script>
+    <!--Auth service-->
+    <script src="../services/authService.js"></script>
+    <!--View scripts-->
+    <script>
+      document.addEventListener("DOMContentLoaded", async () => {
+        try {
+          await authStatus();
+          // Redirect or perform other actions
+          setTimeout(() => {
+            window.location.href = "../notes/notes.html";
+          }, 2000);
+        } catch (error) {
+          // Show error toast
+          document.querySelector(
+            ".toast.text-bg-danger .toast-body"
+          ).textContent = error;
+          const errorToast = new bootstrap.Toast(
+            document.querySelector(".toast.text-bg-danger")
+          );
+          errorToast.show();
+        }
+      });
+
+      const verificationForm = document.getElementById("verificationForm");
+      verificationForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const email = new URLSearchParams(window.location.search).get("email");
+        console.log(email);
+        const otp = document.getElementById("otpVerificationForm").value;
+
+        try {
+          const response = await confirmAccount(email, otp);
+          if (response.status === 200) {
+            // Show success toast
+            document.querySelector(
+              ".toast.text-bg-primary .toast-body"
+            ).textContent = response.message;
+
+            const toast = new bootstrap.Toast(
+              document.querySelector(".toast.text-bg-primary")
+            );
+            toast.show();
+            // Redirect or perform other actions
+            setTimeout(() => {
+              window.location.href = "welcome.html?email=" + email;
+            }, 2000);
+          }
+        } catch (error) {
+          // Show error toast
+          document.querySelector(
+            ".toast.text-bg-danger .toast-body"
+          ).textContent = error;
+          const errorToast = new bootstrap.Toast(
+            document.querySelector(".toast.text-bg-danger")
+          );
+          errorToast.show();
+        }
+      });
+
+      const resendCodeButton = document.querySelector(".btn-link");
+      resendCodeButton.addEventListener("click", async () => {
+        try {
+          const email = new URLSearchParams(window.location.search).get(
+            "email"
+          );
+          const response = await resendOTP(email);
+          if (response.status === 200) {
+            // Show success toast
+            document.querySelector(
+              ".toast.text-bg-primary .toast-body"
+            ).textContent = response.message;
+
+            const toast = new bootstrap.Toast(
+              document.querySelector(".toast.text-bg-primary")
+            );
+            toast.show();
+          }
+        } catch (error) {
+          // Show error toast
+          document.querySelector(
+            ".toast.text-bg-danger .toast-body"
+          ).textContent = error;
+          const errorToast = new bootstrap.Toast(
+            document.querySelector(".toast.text-bg-danger")
+          );
+          errorToast.show();
+        }
+      });
+    </script>
+  </body>
+</html>
