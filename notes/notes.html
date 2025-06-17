@@ -171,10 +171,18 @@
             return;
           }
 
-          // Recorrer las notas y crear una carta por cada nota
+          // Recorrer las notas y crear una carta por cada nota border-start border-4 border-primary p-3
           response.data.notes.forEach((note) => {
             const noteCard = document.createElement("div");
             noteCard.classList.add("my-4", "me-2", "shadow");
+            // Si la nota tiene un color, aplica clases adicionales
+            if (note.color) {
+              noteCard.classList.add(
+                "border-start",
+                "border-4",
+                `border-${note.color.name}`
+              );
+            }
             noteCard.innerHTML = `
                 <div class="border border-secondary d-flex flex-column justify-content-between" style="width: 300px; height: 100%" id="${
                   note._id
@@ -295,7 +303,7 @@
       };
 
       const editNote = (noteId) => {
-        window.location.href = "../notes/edit-note.html?id=" + noteId;
+        window.location.href = "../notes/note.html?id=" + noteId;
       };
 
       const deleteNote = async (noteId) => {
