@@ -65,17 +65,28 @@
               </div>
               <div>
                 <div class="input-group input-group-sm">
+                  <select
+                    class="form-select rounded-0"
+                    aria-label="Select permission"
+                    id="permissionSelect"
+                  >
+                    <option selected disabled>Permission</option>
+                    <option value="viewer">viewer</option>
+                    <option value="editor">editor</option>
+                  </select>
                   <input
                     type="text"
                     class="form-control rounded-0"
                     placeholder="User's email"
                     aria-label="Recipient’s username"
                     aria-describedby="button-addon2"
+                    id="emailShare"
                   />
                   <button
                     class="btn btn-outline-primary rounded-0"
                     type="button"
                     id="button-addon2"
+                    onclick="shareNote()"
                   >
                     Share
                   </button>
@@ -99,15 +110,8 @@
             </div>
             <div class="px-1 mt-auto">
               <div class="d-flex flex-column">
-                <div class="mb-1">
-                  <p class="mb-1">Share with:</p>
-                  <button
-                    type="button"
-                    class="btn btn-outline-dark btn-sm rounded-0"
-                  >
-                    brunaantelo@email.com <i class="bi bi-x"></i>
-                  </button>
-                </div>
+                <p class="mb-1">Share with:</p>
+                <div class="mb-1" id="sharedUsers">Loading shared users...</div>
                 <hr />
                 <div class="mb-1 mt-1">
                   <button
@@ -121,11 +125,11 @@
                   </button>
                 </div>
                 <hr />
-                <p class="mb-0" id="createdAt">
-                  Created at: <span id="createdAtNote">Loading...</span>
+                <p class="mb-0">
+                  Created at: <span id="createdAt">Loading...</span>
                 </p>
-                <p class="mb-0" id="updatedAt">
-                  Updated at: <span id="updatedAtNote">Loading...</span>
+                <p class="mb-0">
+                  Updated at: <span id="updatedAt">Loading...</span>
                 </p>
               </div>
             </div>
@@ -233,6 +237,23 @@
             "autor"
           ).textContent = `Autor: ${note.created_by.first_name} ${note.created_by.last_name}`;
 
+          //{user.permission}
+
+          if (note.shared_with && note.shared_with.length > 0) {
+            document.getElementById("sharedUsers").innerHTML = note.shared_with
+              .map(
+                (user) => `
+                <button type="button" class="btn btn-outline-dark btn-sm rounded-0" onclick="unshareNote('${user.user_id.email}')">
+                  ${user.user_id.email} <i class="bi bi-x"></i>
+                </button>
+              `
+              )
+              .join("");
+          } else {
+            document.getElementById("sharedUsers").innerHTML =
+              "<p>No users shared.</p>";
+          }
+
           document.getElementById("createdAt").textContent = new Date(
             note.createdAt
           ).toLocaleDateString();
@@ -317,6 +338,91 @@
               document.querySelector(".toast.text-bg-primary")
             );
             toast.show();
+          }
+        } catch (error) {
+          // Show error toast
+          document.querySelector(
+            ".toast.text-bg-danger .toast-body"
+          ).textContent = error;
+          const errorToast = new bootstrap.Toast(
+            document.querySelector(".toast.text-bg-danger")
+          );
+          errorToast.show();
+        }
+      };
+
+      const shareNote = async () => {
+        const noteId = new URLSearchParams(window.location.search).get("id");
+        if (!noteId) {
+          console.error("No note ID provided in the URL.");
+          return;
+        }
+
+        const email = document.getElementById("emailShare").value.trim();
+        if (!email) {
+          console.error("No email provided for sharing.");
+          return;
+        }
+
+        const permission = document.getElementById("permissionSelect").value;
+        if (!permission || permission === "Select permission") {
+          console.error("No permission selected.");
+          return;
+        }
+
+        const payload = {
+          email: email,
+          permission: permission,
+        };
+
+        try {
+          const response = await shareNoteWithUser(noteId, payload);
+          if (response.status === 200) {
+            // Show success toast
+            document.querySelector(
+              ".toast.text-bg-primary .toast-body"
+            ).textContent = response.message;
+
+            const toast = new bootstrap.Toast(
+              document.querySelector(".toast.text-bg-primary")
+            );
+            toast.show();
+
+            loadNote(); // Reload the note to reflect the changes
+          }
+        } catch (error) {
+          // Show error toast
+          document.querySelector(
+            ".toast.text-bg-danger .toast-body"
+          ).textContent = error;
+          const errorToast = new bootstrap.Toast(
+            document.querySelector(".toast.text-bg-danger")
+          );
+          errorToast.show();
+        }
+      };
+
+      const unshareNote = async (email) => {
+        const noteId = new URLSearchParams(window.location.search).get("id");
+        if (!noteId) {
+          console.error("No note ID provided in the URL.");
+          return;
+        }
+
+        try {
+          const response = await unshareNoteWithUser(noteId, email);
+          if (response.status === 200) {
+            // Show success toast
+            document.querySelector(
+              ".toast.text-bg-primary .toast-body"
+            ).textContent = response.message;
+
+            const toast = new bootstrap.Toast(
+              document.querySelector(".toast.text-bg-primary")
+            );
+            toast.show();
+
+            loadNote(); // Reload the note to reflect the changes
           }
         } catch (error) {
           // Show error toast

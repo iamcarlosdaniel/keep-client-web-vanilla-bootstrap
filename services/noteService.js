@@ -109,7 +109,7 @@ const deleteNoteById = async (noteId) => {
   }
 };
 
-const share = async (noteId, payload) => {
+const shareNoteWithUser = async (noteId, payload) => {
   try {
     const response = await axiosInstance.post(`/notes/${noteId}/share`, {
       email: payload.email,
@@ -128,10 +128,10 @@ const share = async (noteId, payload) => {
   }
 };
 
-const unshare = async (noteId, email) => {
+const unshareNoteWithUser = async (noteId, email) => {
   try {
     const response = await axiosInstance.delete(`/notes/${noteId}/share`, {
-      email: email,
+      data: { email },
     });
     return {
       status: response.status,
