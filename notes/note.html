@@ -24,7 +24,7 @@
           <div class="border border-secondary p-3">
             <div id="image_header">
               <div
-                class="d-flex align-items-center justify-content-center"
+                class="d-flex flex-column align-items-center justify-content-center"
                 style="width: 100%; height: 200px"
               >
                 <input
@@ -126,15 +126,21 @@
                 </div>
                 <hr />
                 <div class="mb-1 mt-1">
-                  <button
-                    type="button"
-                    class="btn btn-primary btn-sm rounded-0"
-                  >
-                    Tag uno <i class="bi bi-tags-fill"></i>
-                  </button>
-                  <button type="button" class="btn btn-danger btn-sm rounded-0">
-                    Tag dos <i class="bi bi-tags-fill"></i>
-                  </button>
+                  <!--select para cargar etiquetas-->
+                  <div class="input-group input-group-sm w-auto mb-2">
+                    <select
+                      class="form-select rounded-0"
+                      id="tagsSelect"
+                    ></select>
+                    <button
+                      class="btn btn-outline-primary rounded-0"
+                      onclick="addTag()"
+                    >
+                      Anadir
+                    </button>
+                  </div>
+
+                  <div id="tagsContainer">Loading...</div>
                 </div>
                 <hr />
                 <p class="mb-0">
@@ -207,6 +213,7 @@
         try {
           await authStatus();
           await loadNote();
+          await getAllTags(); // Load tags for the select input
         } catch (error) {
           // Show error toast
           document.querySelector(
@@ -240,10 +247,10 @@
             ).className = ` border-${note.color.name} border-4 border-start`;
           }
 
-          if (note.image) {
+          if (note.header_image) {
             document.getElementById("image_header").innerHTML = `
             <img
-              src="${note.image}"
+              src="${note.header_image.url}"
               alt=""
               class="img-fluid mb-3"
               style="width: 100%; height: 200px; object-fit: cover"
@@ -261,6 +268,21 @@
           ).textContent = `Autor: ${note.created_by.first_name} ${note.created_by.last_name}`;
 
           //{user.permission}
+
+          if (note.tags && note.tags.length > 0) {
+            document.getElementById("tagsContainer").innerHTML = note.tags
+              .map(
+                (tag) => `
+                <button type="button" class="btn btn-primary btn-sm rounded-0" onclick="removeTag('${tag._id}')">
+                  ${tag.title} <i class="bi bi-tags-fill"></i>
+                </button>
+              `
+              )
+              .join("");
+          } else {
+            document.getElementById("tagsContainer").innerHTML =
+              "<p>No tags available.</p>";
+          }
 
           if (note.shared_with && note.shared_with.length > 0) {
             document.getElementById("sharedUsers").innerHTML = note.shared_with
@@ -582,6 +604,153 @@
             errorToast.show();
           });
       }
+
+      const uploadImage = async (event) => {
+        try {
+          const fileInput = document.getElementById("imageInput");
+          const file = fileInput.files[0];
+
+          if (!file) {
+            console.error("No file selected for upload.");
+            return;
+          }
+
+          const noteId = new URLSearchParams(window.location.search).get("id");
+          if (!noteId) {
+            console.error("No note ID provided in the URL.");
+            return;
+          }
+
+          const formData = new FormData();
+          formData.append("image", file);
+
+          const response = await uploadImageApi(formData);
+
+          if (response.status === 200) {
+            // Show success toast
+            document.querySelector(
+              ".toast.text-bg-primary .toast-body"
+            ).textContent = response.message;
+
+            const toast = new bootstrap.Toast(
+              document.querySelector(".toast.text-bg-primary")
+            );
+            toast.show();
+
+            await addHeaderImage(noteId, response.data._id);
+
+            loadNote(); // Reload the note to reflect the changes
+          } else {
+            throw new Error(
+              "Image upload failed with status: " + response.status
+            );
+          }
+        } catch (error) {
+          // Show error toast
+          document.querySelector(
+            ".toast.text-bg-danger .toast-body"
+          ).textContent = error.message || error;
+          const errorToast = new bootstrap.Toast(
+            document.querySelector(".toast.text-bg-danger")
+          );
+          errorToast.show();
+          console.error("Upload image error:", error);
+        }
+      };
+
+      const getAllTags = async () => {
+        try {
+          const response = await getTags();
+          if (response.status === 200) {
+            const tagsSelect = document.getElementById("tagsSelect");
+            tagsSelect.innerHTML = ""; // Clear existing options
+            response.data.tags.forEach((tag) => {
+              const option = document.createElement("option");
+              option.value = tag._id;
+              option.textContent = tag.title;
+              tagsSelect.appendChild(option);
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching tags:", error);
+        }
+      };
+
+      const addTag = async () => {
+        const noteId = new URLSearchParams(window.location.search).get("id");
+        if (!noteId) {
+          console.error("No note ID provided in the URL.");
+          return;
+        }
+
+        const tagsSelect = document.getElementById("tagsSelect");
+        const tagId = tagsSelect.value;
+
+        if (!tagId) {
+          console.error("No tag selected.");
+          return;
+        }
+
+        try {
+          const response = await addTagToNote(noteId, tagId);
+          if (response.status === 200) {
+            // Show success toast
+            document.querySelector(
+              ".toast.text-bg-primary .toast-body"
+            ).textContent = response.message;
+
+            const toast = new bootstrap.Toast(
+              document.querySelector(".toast.text-bg-primary")
+            );
+            toast.show();
+
+            loadNote(); // Reload the note to reflect the changes
+          }
+        } catch (error) {
+          // Show error toast
+          document.querySelector(
+            ".toast.text-bg-danger .toast-body"
+          ).textContent = error;
+          const errorToast = new bootstrap.Toast(
+            document.querySelector(".toast.text-bg-danger")
+          );
+          errorToast.show();
+        }
+      };
+
+      const removeTag = async (tagId) => {
+        const noteId = new URLSearchParams(window.location.search).get("id");
+        if (!noteId) {
+          console.error("No note ID provided in the URL.");
+          return;
+        }
+
+        try {
+          const response = await removeTagFromNote(noteId, tagId);
+          if (response.status === 200) {
+            // Show success toast
+            document.querySelector(
+              ".toast.text-bg-primary .toast-body"
+            ).textContent = response.message;
+
+            const toast = new bootstrap.Toast(
+              document.querySelector(".toast.text-bg-primary")
+            );
+            toast.show();
+
+            loadNote(); // Reload the note to reflect the changes
+          }
+        } catch (error) {
+          // Show error toast
+          document.querySelector(
+            ".toast.text-bg-danger .toast-body"
+          ).textContent = error;
+          const errorToast = new bootstrap.Toast(
+            document.querySelector(".toast.text-bg-danger")
+          );
+          errorToast.show();
+        }
+      };
     </script>
   </body>
 </html>
