@@ -76,9 +76,11 @@ const signIn = async (email, password) => {
 const authStatus = async () => {
   try {
     const response = await axiosInstance.get("/auth/status");
+
     return {
       status: response.status,
       message: response.data.message,
+      data: response.data.data,
     };
   } catch (error) {
     console.error(

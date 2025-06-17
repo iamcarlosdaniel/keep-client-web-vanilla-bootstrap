@@ -129,9 +129,9 @@
     <script src="../services/authService.js"></script>
     <!--View scripts-->
     <script>
-      document.addEventListener("DOMContentLoaded", () => {
+      document.addEventListener("DOMContentLoaded", async () => {
         try {
-          authStatus();
+          await authStatus();
           // Redirect or perform other actions
           setTimeout(() => {
             window.location.href = "../notes/notes.html";
