@@ -22,13 +22,19 @@
       <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
         <div id="color" class="w-100">
           <div class="border border-secondary p-3">
-            <div>
-              <img
-                src="https://www.anipedia.net/imagenes/que-comen-los-perros.jpg"
-                alt=""
-                class="img-fluid mb-3"
-                style="width: 100%; height: 200px; object-fit: cover"
-              />
+            <div id="image_header">
+              <div
+                class="d-flex align-items-center justify-content-center"
+                style="width: 100%; height: 200px"
+              >
+                <input
+                  type="file"
+                  id="imageInput"
+                  class="form-control rounded-0"
+                  accept="image/*"
+                  onchange="uploadImage(event)"
+                />
+              </div>
             </div>
             <div class="d-flex align-items-center justify-content-between mb-1">
               <div class="d-flex">
@@ -102,7 +108,11 @@
                   <i class="bi bi-copy"></i>
                 </a>
                 <div>
-                  <a href="#" class="link-dark text-decoration-none me-2">
+                  <a
+                    href="#"
+                    class="link-dark text-decoration-none me-2"
+                    onclick="enableEditMode()"
+                  >
                     <i class="bi bi-pen"></i>
                   </a>
                 </div>
@@ -230,6 +240,17 @@
             ).className = ` border-${note.color.name} border-4 border-start`;
           }
 
+          if (note.image) {
+            document.getElementById("image_header").innerHTML = `
+            <img
+              src="${note.image}"
+              alt=""
+              class="img-fluid mb-3"
+              style="width: 100%; height: 200px; object-fit: cover"
+            />
+          `;
+          }
+
           document.getElementById("title").textContent =
             note.title || "Untitled Note";
           document.getElementById("content").textContent =
@@ -308,6 +329,100 @@
             toast.show();
 
             loadNote(); // Reload the note to reflect the color change
+          }
+        } catch (error) {
+          // Show error toast
+          document.querySelector(
+            ".toast.text-bg-danger .toast-body"
+          ).textContent = error;
+          const errorToast = new bootstrap.Toast(
+            document.querySelector(".toast.text-bg-danger")
+          );
+          errorToast.show();
+        }
+      };
+
+      let saveTimeout;
+      let disableTimeout;
+
+      const onUserInput = () => {
+        // Cancelar cualquier temporizador anterior
+        clearTimeout(saveTimeout);
+        clearTimeout(disableTimeout);
+
+        // Programar guardado después de 5 segundos de inactividad
+        saveTimeout = setTimeout(() => {
+          updateNoteInfo(); // Llamada real a tu API
+        }, 5000);
+
+        // Programar desactivación del modo edición después de 10 segundos de inactividad
+        disableTimeout = setTimeout(() => {
+          disableEditMode();
+        }, 10000);
+      };
+
+      const enableEditMode = () => {
+        const titleEl = document.getElementById("title");
+        const contentEl = document.getElementById("content");
+
+        titleEl.contentEditable = true;
+        contentEl.contentEditable = true;
+        titleEl.focus();
+
+        // Escuchar cambios del usuario
+        titleEl.addEventListener("input", onUserInput);
+        contentEl.addEventListener("input", onUserInput);
+      };
+
+      const disableEditMode = () => {
+        const titleEl = document.getElementById("title");
+        const contentEl = document.getElementById("content");
+
+        titleEl.contentEditable = false;
+        contentEl.contentEditable = false;
+
+        // Eliminar los listeners
+        titleEl.removeEventListener("input", onUserInput);
+        contentEl.removeEventListener("input", onUserInput);
+
+        // Mostrar toast
+        document.querySelector(
+          ".toast.text-bg-primary .toast-body"
+        ).textContent = "Edit mode disabled after inactivity.";
+
+        const toast = new bootstrap.Toast(
+          document.querySelector(".toast.text-bg-primary")
+        );
+        toast.show();
+      };
+
+      const updateNoteInfo = async () => {
+        const noteId = new URLSearchParams(window.location.search).get("id");
+        if (!noteId) {
+          console.error("No note ID provided in the URL.");
+          return;
+        }
+
+        const title = document.getElementById("title").textContent.trim();
+        const content = document.getElementById("content").textContent.trim();
+
+        const payload = {
+          title: title,
+          content: content,
+        };
+
+        try {
+          const response = await updateNote(noteId, payload);
+          if (response.status === 200) {
+            // Show success toast
+            document.querySelector(
+              ".toast.text-bg-primary .toast-body"
+            ).textContent = response.message;
+
+            const toast = new bootstrap.Toast(
+              document.querySelector(".toast.text-bg-primary")
+            );
+            toast.show();
           }
         } catch (error) {
           // Show error toast
