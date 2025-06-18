@@ -32,7 +32,7 @@ const getTags = async () => {
   }
 };
 
-const updateTag = async (tagId, tag) => {
+const updateTagById = async (tagId, tag) => {
   try {
     const response = await axiosInstance.put(`/tags/${tagId}`, tag);
     return {
@@ -49,7 +49,7 @@ const updateTag = async (tagId, tag) => {
   }
 };
 
-const deleteTag = async (tagId) => {
+const deleteTagById = async (tagId) => {
   try {
     const response = await axiosInstance.delete(`/tags/${tagId}`);
     return {

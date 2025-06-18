@@ -195,6 +195,23 @@ const addHeaderImage = async (noteId, imageId) => {
   }
 };
 
+const removeHeaderImage = async (noteId) => {
+  try {
+    const response = await axiosInstance.delete(`/notes/${noteId}/header`);
+    return {
+      status: response.status,
+      message: response.data.message,
+    };
+  } catch (error) {
+    const message =
+      error?.response?.data?.error?.[0]?.message ||
+      error?.message ||
+      "Unexpected error occurred.";
+    console.error("Error removing header image:", message);
+    throw message;
+  }
+};
+
 const addTagToNote = async (noteId, tagId) => {
   try {
     const response = await axiosInstance.post(`/notes/${noteId}/tags`, {

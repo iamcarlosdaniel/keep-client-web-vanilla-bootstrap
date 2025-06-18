@@ -94,3 +94,19 @@ const authStatus = async () => {
     );
   }
 };
+
+const authSignOut = async () => {
+  try {
+    const response = await axiosInstance.post("/auth/sign-out");
+    return {
+      status: response.status,
+      message: response.data.message,
+    };
+  } catch (error) {
+    console.error("Error signing out:", error.response.data.error[0].message);
+    throw (
+      error.response.data.error[0].message ||
+      "An error occurred during sign out."
+    );
+  }
+};

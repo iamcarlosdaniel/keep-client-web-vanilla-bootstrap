@@ -99,7 +99,15 @@
                 </div>
               </div>
             </div>
-            <h1 class="display-5 fw-normal" id="title">Loading...</h1>
+            <div class="d-flex align-items-center justify-content-between">
+              <h1 class="display-5 fw-normal" id="title">Loading...</h1>
+              <button
+                class="btn btn-outline-danger rounded-0"
+                onclick="removeHeaderImageToNote()"
+              >
+                Remove imagen
+              </button>
+            </div>
             <p class="fs-4" id="content">Loading...</p>
             <p id="autor">Autor: <span>Loading...</span></p>
             <div class="px-1 pb-5 pt-1 mt-auto">
@@ -255,6 +263,21 @@
               class="img-fluid mb-3"
               style="width: 100%; height: 200px; object-fit: cover"
             />
+          `;
+          } else {
+            document.getElementById("image_header").innerHTML = `
+            <div
+              class="d-flex flex-column align-items-center justify-content-center"
+              style="width: 100%; height: 200px"
+            >
+              <input
+                type="file"
+                id="imageInput"
+                class="form-control rounded-0"
+                accept="image/*"
+                onchange="uploadImage(event)"
+              />
+            </div>
           `;
           }
 
@@ -727,6 +750,40 @@
 
         try {
           const response = await removeTagFromNote(noteId, tagId);
+          if (response.status === 200) {
+            // Show success toast
+            document.querySelector(
+              ".toast.text-bg-primary .toast-body"
+            ).textContent = response.message;
+
+            const toast = new bootstrap.Toast(
+              document.querySelector(".toast.text-bg-primary")
+            );
+            toast.show();
+
+            loadNote(); // Reload the note to reflect the changes
+          }
+        } catch (error) {
+          // Show error toast
+          document.querySelector(
+            ".toast.text-bg-danger .toast-body"
+          ).textContent = error;
+          const errorToast = new bootstrap.Toast(
+            document.querySelector(".toast.text-bg-danger")
+          );
+          errorToast.show();
+        }
+      };
+
+      const removeHeaderImageToNote = async () => {
+        const noteId = new URLSearchParams(window.location.search).get("id");
+        if (!noteId) {
+          console.error("No note ID provided in the URL.");
+          return;
+        }
+
+        try {
+          const response = await removeHeaderImage(noteId);
           if (response.status === 200) {
             // Show success toast
             document.querySelector(
